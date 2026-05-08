@@ -9,11 +9,24 @@ export const dynamic = "force-dynamic";
 
 // One-shot owner password reset gated by RESET_TOKEN env var.
 // Remove this file after use.
+export async function GET() {
+  // diagnostic: tells whether env is wired without revealing the token
+  const expected = process.env.RESET_TOKEN;
+  return NextResponse.json({
+    hasResetToken: !!expected,
+    tokenLen: expected ? expected.length : 0,
+  });
+}
+
 export async function POST(req: NextRequest) {
-  const token = req.headers.get("x-reset-token");
+  const url = new URL(req.url);
+  const token = req.headers.get("x-reset-token") || url.searchParams.get("token");
   const expected = process.env.RESET_TOKEN;
   if (!expected || token !== expected) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized", hasEnv: !!expected, gotToken: !!token },
+      { status: 401 },
+    );
   }
 
   let body: { password?: string };
