@@ -21,10 +21,11 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const url = new URL(req.url);
   const token = req.headers.get("x-reset-token") || url.searchParams.get("token");
-  const expected = process.env.RESET_TOKEN;
-  if (!expected || token !== expected) {
+  const expected = (process.env.RESET_TOKEN || "").trim();
+  const provided = (token || "").trim();
+  if (!expected || provided !== expected) {
     return NextResponse.json(
-      { error: "Unauthorized", hasEnv: !!expected, gotToken: !!token },
+      { error: "Unauthorized", hasEnv: !!expected, gotToken: !!provided },
       { status: 401 },
     );
   }
