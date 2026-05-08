@@ -39,6 +39,23 @@ type Dict = {
   wrongPassword: string;
   copyUrl: string;
   copied: string;
+  // Custom text labels (settings)
+  customTextHeading: string;
+  customTextDesc: string;
+  customSubtitleLabel: string;
+  customCtaLabel: string;
+  customWriteTitleLabel: string;
+  customWriteDescLabel: string;
+  customLockedMsgLabel: string;
+  customShareTextLabel: string;
+  customPlaceholder: string;
+  // Lock controls (in settings)
+  lockSection: string;
+  lockBtn: string;
+  unlockBtn: string;
+  passwordSection: string;
+  changePassword: string;
+  setPasswordFirst: string;
 };
 
 export const translations: Record<"ko" | "en", Dict> = {
@@ -91,8 +108,27 @@ export const translations: Record<"ko" | "en", Dict> = {
     wrongPassword: "비밀번호가 틀려요",
 
     // Share
-    copyUrl: "링크 복사",
-    copied: "복사됨!",
+    copyUrl: "공유하기",
+    copied: "링크가 복사됐어요",
+
+    // Custom text labels
+    customTextHeading: "문구 직접 바꾸기",
+    customTextDesc: "비워두면 기본 문구가 사용돼요",
+    customSubtitleLabel: "부제목",
+    customCtaLabel: "버튼 문구",
+    customWriteTitleLabel: "편지 작성 제목",
+    customWriteDescLabel: "편지 작성 설명",
+    customLockedMsgLabel: "잠긴 편지 안내",
+    customShareTextLabel: "공유 문구",
+    customPlaceholder: "기본값 사용",
+
+    // Lock
+    lockSection: "잠금",
+    lockBtn: "다시 잠그기",
+    unlockBtn: "잠금 해제",
+    passwordSection: "비밀번호",
+    changePassword: "비밀번호 변경",
+    setPasswordFirst: "처음이라면 새 비밀번호를 설정해주세요",
   },
   en: {
     madeIn: "Made with ♥ in Canada",
@@ -137,8 +173,27 @@ export const translations: Record<"ko" | "en", Dict> = {
     saveFailed: "Something went wrong. Try again.",
     wrongPassword: "Wrong password",
 
-    copyUrl: "Copy link",
-    copied: "Copied!",
+    copyUrl: "Share",
+    copied: "Link copied",
+
+    // Custom text labels
+    customTextHeading: "Custom text",
+    customTextDesc: "Leave blank to use the default",
+    customSubtitleLabel: "Subtitle",
+    customCtaLabel: "Button text",
+    customWriteTitleLabel: "Write dialog title",
+    customWriteDescLabel: "Write dialog description",
+    customLockedMsgLabel: "Locked-letter message",
+    customShareTextLabel: "Share message",
+    customPlaceholder: "Using default",
+
+    // Lock
+    lockSection: "Lock",
+    lockBtn: "Lock again",
+    unlockBtn: "Unlock",
+    passwordSection: "Password",
+    changePassword: "Change password",
+    setPasswordFirst: "First time? Set a new password",
   },
 };
 

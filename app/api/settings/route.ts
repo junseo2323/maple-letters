@@ -23,6 +23,13 @@ export async function GET() {
     return NextResponse.json({
       paperName: s.paperName,
       hasPassword: !!s.ownerPasswordHash,
+      customSubtitle: s.customSubtitle ?? null,
+      customCta: s.customCta ?? null,
+      customWriteTitle: s.customWriteTitle ?? null,
+      customWriteDesc: s.customWriteDesc ?? null,
+      customLockedMsg: s.customLockedMsg ?? null,
+      customShareText: s.customShareText ?? null,
+      defaultLang: s.defaultLang ?? "en",
     });
   } catch (e) {
     return NextResponse.json({ error: "Failed to load settings" }, { status: 500 });
@@ -49,8 +56,16 @@ export async function PATCH(req: NextRequest) {
     }
 
     const updates: Partial<typeof settings.$inferInsert> = {};
-    if (parsed.data.paperName !== undefined) updates.paperName = parsed.data.paperName;
-    if (parsed.data.newPassword) updates.ownerPasswordHash = hashPassword(parsed.data.newPassword);
+    const d = parsed.data;
+    if (d.paperName !== undefined) updates.paperName = d.paperName;
+    if (d.newPassword) updates.ownerPasswordHash = hashPassword(d.newPassword);
+    if (d.customSubtitle !== undefined) updates.customSubtitle = d.customSubtitle || null;
+    if (d.customCta !== undefined) updates.customCta = d.customCta || null;
+    if (d.customWriteTitle !== undefined) updates.customWriteTitle = d.customWriteTitle || null;
+    if (d.customWriteDesc !== undefined) updates.customWriteDesc = d.customWriteDesc || null;
+    if (d.customLockedMsg !== undefined) updates.customLockedMsg = d.customLockedMsg || null;
+    if (d.customShareText !== undefined) updates.customShareText = d.customShareText || null;
+    if (d.defaultLang !== undefined) updates.defaultLang = d.defaultLang;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ ok: true, paperName: current.paperName });

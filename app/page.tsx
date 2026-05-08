@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Share2, Settings as SettingsIcon, Lock, Unlock } from "lucide-react";
+import { Pencil, Share2, Settings as SettingsIcon, Lock, Unlock, Check } from "lucide-react";
 
 import { apiRequest, setOwnerPassword, getOwnerPassword } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,24 @@ import { translations, type Lang, type T } from "@/lib/i18n";
 interface SettingsResp {
   paperName: string;
   hasPassword: boolean;
+  customSubtitle: string | null;
+  customCta: string | null;
+  customWriteTitle: string | null;
+  customWriteDesc: string | null;
+  customLockedMsg: string | null;
+  customShareText: string | null;
+  defaultLang: "ko" | "en";
 }
+
+const CUSTOM_TEXT_KEYS = [
+  "customSubtitle",
+  "customCta",
+  "customWriteTitle",
+  "customWriteDesc",
+  "customLockedMsg",
+  "customShareText",
+] as const;
+type CustomTextKey = (typeof CUSTOM_TEXT_KEYS)[number];
 
 const TILE_CLASS: Record<string, string> = {
   peach: "tile-peach",
@@ -69,22 +86,41 @@ function useToast() {
 }
 
 export default function Home() {
-  const [lang, setLang] = useState<Lang>("ko");
+  const [lang, setLang] = useState<Lang | null>(null);
   const [pickedCell, setPickedCell] = useState<number | null>(null);
   const [openWrite, setOpenWrite] = useState(false);
   const [selected, setSelected] = useState<PublicMessage | null>(null);
-  const [openUnlock, setOpenUnlock] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
   const [hearted, setHearted] = useState<Set<number>>(new Set());
   const [isOwner, setIsOwner] = useState(false);
   const { toast, show } = useToast();
-  const t = translations[lang];
+  const effectiveLang: Lang = lang ?? "en";
+  const t = translations[effectiveLang];
   const qc = useQueryClient();
 
   const { data: settings } = useQuery<SettingsResp>({
     queryKey: ["/api/settings"],
     queryFn: () => apiRequest<SettingsResp>("GET", "/api/settings"),
   });
+
+  // Apply default language from settings the first time it loads
+  useEffect(() => {
+    if (lang === null && settings?.defaultLang) {
+      setLang(settings.defaultLang);
+    }
+  }, [lang, settings?.defaultLang]);
+
+  // Resolve custom text overrides (server-set text wins over i18n)
+  const txt = useMemo(
+    () => ({
+      subtitle: settings?.customSubtitle || t.subtitle,
+      cta: settings?.customCta || t.cta,
+      writeTitle: settings?.customWriteTitle || t.writeTitle,
+      writeDesc: settings?.customWriteDesc || t.writeDesc,
+      locked: settings?.customLockedMsg || t.locked,
+    }),
+    [settings, t],
+  );
 
   const { data: messages, isLoading } = useQuery<PublicMessage[]>({
     queryKey: ["/api/messages"],
@@ -141,11 +177,24 @@ export default function Home() {
     }
   };
 
-  const onCopy = async () => {
+  const onShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareText = settings?.customShareText || (settings?.paperName ?? "Maple Letters");
+    const data = {
+      title: settings?.paperName ?? "Maple Letters",
+      text: shareText,
+      url,
+    };
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share(data);
+        return;
+      }
+      await navigator.clipboard.writeText(`${shareText}\n${url}`);
       show(t.copied);
-    } catch {}
+    } catch {
+      // user cancelled share, ignore
+    }
   };
 
   return (
@@ -158,12 +207,20 @@ export default function Home() {
             <span className="font-semibold text-foreground">{settings?.paperName ?? "Maple Letters"}</span>
           </div>
           <div className="flex items-center gap-1.5">
+            {isOwner && (
+              <span
+                title={t.locked2}
+                className="flex h-7 items-center gap-1 rounded-full bg-maple-light px-2.5 text-xs font-medium text-maple"
+              >
+                <Unlock className="h-3 w-3" /> {t.locked2}
+              </span>
+            )}
             <button
-              onClick={() => (isOwner ? setIsOwner(false) : setOpenUnlock(true))}
-              title={isOwner ? t.locked2 : t.locking}
+              onClick={onShare}
+              title={t.copyUrl}
               className="rounded-full p-2 text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
             >
-              {isOwner ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+              <Share2 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setOpenSettings(true)}
@@ -172,23 +229,16 @@ export default function Home() {
             >
               <SettingsIcon className="h-4 w-4" />
             </button>
-            <button
-              onClick={onCopy}
-              title={t.copyUrl}
-              className="rounded-full p-2 text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
             <div className="ml-1.5 flex overflow-hidden rounded-full border border-border text-xs">
               <button
                 onClick={() => setLang("ko")}
-                className={`px-3 py-1.5 ${lang === "ko" ? "bg-maple text-white" : "bg-background text-foreground/70"}`}
+                className={`px-3 py-1.5 ${effectiveLang === "ko" ? "bg-maple text-white" : "bg-background text-foreground/70"}`}
               >
                 KR
               </button>
               <button
                 onClick={() => setLang("en")}
-                className={`px-3 py-1.5 ${lang === "en" ? "bg-maple text-white" : "bg-background text-foreground/70"}`}
+                className={`px-3 py-1.5 ${effectiveLang === "en" ? "bg-maple text-white" : "bg-background text-foreground/70"}`}
               >
                 EN
               </button>
@@ -198,11 +248,8 @@ export default function Home() {
       </header>
 
       {/* ── Hero ───────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 pt-7 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-maple-light px-3 py-1 text-xs font-medium text-maple">
-          <MapleLeaf size={12} color="#D52B1E" /> {t.madeIn}
-        </span>
-        <p className="mt-3 text-base text-foreground/80">{t.subtitle}</p>
+      <section className="mx-auto max-w-6xl px-4 pt-8 text-center">
+        <p className="text-base text-foreground/80">{txt.subtitle}</p>
         <p className="mt-1 text-xs text-muted-foreground">{t.progress(filledCount, TOTAL_CELLS)}</p>
       </section>
 
@@ -303,7 +350,7 @@ export default function Home() {
             }}
             disabled={isLoading || filledCount >= TOTAL_CELLS}
           >
-            <Pencil className="mr-2 h-4 w-4" /> {t.cta}
+            <Pencil className="mr-2 h-4 w-4" /> {txt.cta}
           </Button>
         </div>
       </section>
@@ -317,6 +364,8 @@ export default function Home() {
         }}
         cell={pickedCell ?? 0}
         t={t}
+        title={txt.writeTitle}
+        desc={txt.writeDesc}
         onSubmit={(values) => create.mutate(values)}
         submitting={create.isPending}
       />
@@ -342,7 +391,7 @@ export default function Home() {
               ) : (
                 <div className="flex flex-col items-center gap-2 py-6 text-center">
                   <Lock className="h-6 w-6 text-foreground/40" />
-                  <p className="text-sm text-foreground/70">{t.locked}</p>
+                  <p className="text-sm text-foreground/70">{txt.locked}</p>
                   <p className="text-xs text-foreground/50">{t.unlockHint}</p>
                 </div>
               )}
@@ -371,33 +420,26 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Unlock dialog ──────────────────────────────────────────── */}
-      <UnlockDialog
-        open={openUnlock}
-        onOpenChange={setOpenUnlock}
-        t={t}
-        hasPassword={settings?.hasPassword ?? false}
-        onUnlocked={(pw) => {
-          setOwnerPassword(pw);
-          setIsOwner(true);
-          qc.invalidateQueries({ queryKey: ["/api/messages"] });
-          setOpenUnlock(false);
-          show(t.locked2);
-        }}
-        onWrong={() => show(t.wrongPassword, "err")}
-        onNoPassword={() => {
-          setOpenUnlock(false);
-          setOpenSettings(true);
-        }}
-      />
-
-      {/* ── Settings dialog ────────────────────────────────────────── */}
+      {/* ── Settings dialog (also handles unlock) ──────────────────── */}
       <SettingsDialog
         open={openSettings}
         onOpenChange={setOpenSettings}
         t={t}
-        currentName={settings?.paperName ?? ""}
-        hasPassword={settings?.hasPassword ?? false}
+        settings={settings ?? null}
+        isOwner={isOwner}
+        onUnlocked={(pw) => {
+          setOwnerPassword(pw);
+          setIsOwner(true);
+          qc.invalidateQueries({ queryKey: ["/api/messages"] });
+          show(t.locked2);
+        }}
+        onLock={() => {
+          setOwnerPassword(null);
+          setIsOwner(false);
+          qc.invalidateQueries({ queryKey: ["/api/messages"] });
+          show(t.locking);
+        }}
+        onWrong={() => show(t.wrongPassword, "err")}
         onSaved={() => {
           qc.invalidateQueries({ queryKey: ["/api/settings"] });
           show(t.settingsSaved);
@@ -427,6 +469,8 @@ function WriteDialog({
   onOpenChange,
   cell,
   t,
+  title,
+  desc,
   onSubmit,
   submitting,
 }: {
@@ -434,6 +478,8 @@ function WriteDialog({
   onOpenChange: (o: boolean) => void;
   cell: number;
   t: T;
+  title: string;
+  desc: string;
   onSubmit: (v: { cell: number; nickname: string; content: string; color: string; sticker: string }) => void;
   submitting: boolean;
 }) {
@@ -460,8 +506,8 @@ function WriteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t.writeTitle}</DialogTitle>
-          <DialogDescription>{t.writeDesc}</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{desc}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -539,112 +585,107 @@ function WriteDialog({
   );
 }
 
-// ─── UnlockDialog ─────────────────────────────────────────────────────────
-function UnlockDialog({
-  open,
-  onOpenChange,
-  t,
-  hasPassword,
-  onUnlocked,
-  onWrong,
-  onNoPassword,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  t: T;
-  hasPassword: boolean;
-  onUnlocked: (pw: string) => void;
-  onWrong: () => void;
-  onNoPassword: () => void;
-}) {
-  const [pw, setPw] = useState("");
-  const [busy, setBusy] = useState(false);
+// ─── SettingsDialog (combined: lock/unlock + custom text + password) ─────────────
+const CUSTOM_LABEL_KEYS: Record<CustomTextKey, keyof T> = {
+  customSubtitle: "customSubtitleLabel",
+  customCta: "customCtaLabel",
+  customWriteTitle: "customWriteTitleLabel",
+  customWriteDesc: "customWriteDescLabel",
+  customLockedMsg: "customLockedMsgLabel",
+  customShareText: "customShareTextLabel",
+};
 
-  useEffect(() => {
-    if (open) {
-      setPw("");
-      if (!hasPassword) onNoPassword();
-    }
-  }, [open, hasPassword, onNoPassword]);
-
-  const submit = async () => {
-    if (!pw) return;
-    setBusy(true);
-    try {
-      const r = await apiRequest<{ ok: boolean }>("POST", "/api/owner/verify", { password: pw });
-      if (r.ok) onUnlocked(pw);
-      else onWrong();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{t.unlockTitle}</DialogTitle>
-          <DialogDescription>{t.unlockDesc}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-1.5">
-          <Label>{t.ownerPassword}</Label>
-          <Input
-            type="password"
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-            autoFocus
-          />
-        </div>
-        <DialogFooter className="gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {t.cancel}
-          </Button>
-          <Button variant="primary" onClick={submit} disabled={busy || !pw}>
-            {t.unlock}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── SettingsDialog ───────────────────────────────────────────────────────
 function SettingsDialog({
   open,
   onOpenChange,
   t,
-  currentName,
-  hasPassword,
+  settings,
+  isOwner,
+  onUnlocked,
+  onLock,
+  onWrong,
   onSaved,
   onFailed,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   t: T;
-  currentName: string;
-  hasPassword: boolean;
+  settings: SettingsResp | null;
+  isOwner: boolean;
+  onUnlocked: (pw: string) => void;
+  onLock: () => void;
+  onWrong: () => void;
   onSaved: () => void;
   onFailed: () => void;
 }) {
+  const hasPassword = settings?.hasPassword ?? false;
+  const currentName = settings?.paperName ?? "";
+
   const [name, setName] = useState(currentName);
+  const [customs, setCustoms] = useState<Record<CustomTextKey, string>>({
+    customSubtitle: "",
+    customCta: "",
+    customWriteTitle: "",
+    customWriteDesc: "",
+    customLockedMsg: "",
+    customShareText: "",
+  });
+
+  // Unlock state
+  const [unlockPw, setUnlockPw] = useState("");
+  const [unlockBusy, setUnlockBusy] = useState(false);
+
+  // Save state
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setName(currentName);
+      setName(settings?.paperName ?? "");
+      setCustoms({
+        customSubtitle: settings?.customSubtitle ?? "",
+        customCta: settings?.customCta ?? "",
+        customWriteTitle: settings?.customWriteTitle ?? "",
+        customWriteDesc: settings?.customWriteDesc ?? "",
+        customLockedMsg: settings?.customLockedMsg ?? "",
+        customShareText: settings?.customShareText ?? "",
+      });
+      setUnlockPw("");
       setCurrentPw("");
       setNewPw("");
     }
-  }, [open, currentName]);
+  }, [open, settings]);
 
-  const submit = async () => {
+  const tryUnlock = async () => {
+    if (!unlockPw) return;
+    setUnlockBusy(true);
+    try {
+      const r = await apiRequest<{ ok: boolean }>("POST", "/api/owner/verify", { password: unlockPw });
+      if (r.ok) {
+        onUnlocked(unlockPw);
+        setUnlockPw("");
+      } else {
+        onWrong();
+      }
+    } finally {
+      setUnlockBusy(false);
+    }
+  };
+
+  const save = async () => {
     setBusy(true);
     try {
-      const body: Record<string, string> = {};
-      if (name && name !== currentName) body.paperName = name;
+      const body: Record<string, string | null> = {};
+      if (name !== currentName) body.paperName = name;
+      // Custom text: send each field; empty string -> null clears
+      for (const key of CUSTOM_TEXT_KEYS) {
+        const value = customs[key].trim();
+        const original = (settings?.[key] as string | null | undefined) ?? "";
+        if (value !== original) {
+          body[key] = value === "" ? null : value;
+        }
+      }
       if (newPw) body.newPassword = newPw;
       if (hasPassword && currentPw) body.currentPassword = currentPw;
       if (Object.keys(body).length === 0) {
@@ -652,7 +693,6 @@ function SettingsDialog({
         return;
       }
       await apiRequest("PATCH", "/api/settings", body);
-      // If first-time password set, persist for this session
       if (newPw) setOwnerPassword(newPw);
       onSaved();
       onOpenChange(false);
@@ -663,41 +703,137 @@ function SettingsDialog({
     }
   };
 
+  // Show unlock-only view if password set but not unlocked yet
+  const needsUnlock = hasPassword && !isOwner;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t.settingsTitle}</DialogTitle>
+          {needsUnlock && <DialogDescription>{t.unlockDesc}</DialogDescription>}
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>{t.paperName}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.paperNamePh} maxLength={40} />
-          </div>
-          {hasPassword && (
+
+        {needsUnlock ? (
+          <>
             <div className="space-y-1.5">
-              <Label>{t.currentPassword}</Label>
-              <Input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
+              <Label>{t.ownerPassword}</Label>
+              <Input
+                type="password"
+                value={unlockPw}
+                onChange={(e) => setUnlockPw(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && tryUnlock()}
+                autoFocus
+              />
             </div>
-          )}
-          <div className="space-y-1.5">
-            <Label>{hasPassword ? t.newPassword : t.ownerPassword}</Label>
-            <Input
-              type="password"
-              value={newPw}
-              onChange={(e) => setNewPw(e.target.value)}
-              placeholder={!hasPassword ? t.firstSetup : ""}
-            />
-          </div>
-        </div>
-        <DialogFooter className="gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {t.cancel}
-          </Button>
-          <Button variant="primary" onClick={submit} disabled={busy}>
-            {t.save}
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                {t.cancel}
+              </Button>
+              <Button variant="primary" onClick={tryUnlock} disabled={unlockBusy || !unlockPw}>
+                {t.unlock}
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <div className="space-y-4">
+              {/* Lock status / lock button */}
+              {isOwner && hasPassword && (
+                <div className="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Unlock className="h-4 w-4 text-maple" />
+                    <span className="font-medium text-foreground">{t.locked2}</span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={onLock}>
+                    <Lock className="mr-1.5 h-3.5 w-3.5" />
+                    {t.lockBtn}
+                  </Button>
+                </div>
+              )}
+
+              {/* Paper name */}
+              <div className="space-y-1.5">
+                <Label>{t.paperName}</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.paperNamePh} maxLength={40} />
+              </div>
+
+              {/* Custom text section */}
+              <div className="space-y-2 rounded-md border border-border p-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">{t.customTextHeading}</h3>
+                  <p className="text-xs text-muted-foreground">{t.customTextDesc}</p>
+                </div>
+                {CUSTOM_TEXT_KEYS.map((key) => {
+                  const labelKey = CUSTOM_LABEL_KEYS[key];
+                  const isLong = key === "customWriteDesc" || key === "customLockedMsg";
+                  return (
+                    <div key={key} className="space-y-1">
+                      <Label className="text-xs">{t[labelKey] as string}</Label>
+                      {isLong ? (
+                        <Textarea
+                          value={customs[key]}
+                          onChange={(e) =>
+                            setCustoms((c) => ({ ...c, [key]: e.target.value }))
+                          }
+                          placeholder={t.customPlaceholder}
+                          maxLength={300}
+                          className="min-h-[60px] text-sm"
+                        />
+                      ) : (
+                        <Input
+                          value={customs[key]}
+                          onChange={(e) =>
+                            setCustoms((c) => ({ ...c, [key]: e.target.value }))
+                          }
+                          placeholder={t.customPlaceholder}
+                          maxLength={140}
+                          className="text-sm"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Password section */}
+              <div className="space-y-2 rounded-md border border-border p-3">
+                <h3 className="text-sm font-semibold text-foreground">
+                  {hasPassword ? t.changePassword : t.passwordSection}
+                </h3>
+                {hasPassword && (
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t.currentPassword}</Label>
+                    <Input
+                      type="password"
+                      value={currentPw}
+                      onChange={(e) => setCurrentPw(e.target.value)}
+                    />
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <Label className="text-xs">{hasPassword ? t.newPassword : t.ownerPassword}</Label>
+                  <Input
+                    type="password"
+                    value={newPw}
+                    onChange={(e) => setNewPw(e.target.value)}
+                    placeholder={!hasPassword ? t.setPasswordFirst : ""}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                {t.cancel}
+              </Button>
+              <Button variant="primary" onClick={save} disabled={busy}>
+                <Check className="mr-1.5 h-3.5 w-3.5" />
+                {t.save}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
