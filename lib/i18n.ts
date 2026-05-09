@@ -57,6 +57,12 @@ type Dict = {
   passwordSection: string;
   changePassword: string;
   setPasswordFirst: string;
+  // Delete
+  deleteBtn: string;
+  deleteConfirm: string;
+  deleteConfirmYes: string;
+  deleted: string;
+  deleteFailed: string;
 };
 
 export const translations: Record<"ko" | "en", Dict> = {
@@ -131,6 +137,13 @@ export const translations: Record<"ko" | "en", Dict> = {
     passwordSection: "비밀번호",
     changePassword: "비밀번호 변경",
     setPasswordFirst: "처음이라면 새 비밀번호를 설정해주세요",
+
+    // Delete
+    deleteBtn: "삭제",
+    deleteConfirm: "이 편지를 정말 삭제할까요? 되돌릴 수 없어요.",
+    deleteConfirmYes: "삭제할게요",
+    deleted: "편지를 삭제했어요",
+    deleteFailed: "삭제하지 못했어요. 다시 시도해주세요.",
   },
   en: {
     madeIn: "Made with ♥ in Canada",
@@ -197,6 +210,13 @@ export const translations: Record<"ko" | "en", Dict> = {
     passwordSection: "Password",
     changePassword: "Change password",
     setPasswordFirst: "First time? Set a new password",
+
+    // Delete
+    deleteBtn: "Delete",
+    deleteConfirm: "Delete this letter? This can't be undone.",
+    deleteConfirmYes: "Yes, delete",
+    deleted: "Letter deleted",
+    deleteFailed: "Couldn't delete. Try again.",
   },
 };
 

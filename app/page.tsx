@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Share2, Settings as SettingsIcon, Lock, Unlock, Check } from "lucide-react";
+import { Pencil, Share2, Settings as SettingsIcon, Lock, Unlock, Check, Trash2 } from "lucide-react";
 
 import { apiRequest, setOwnerPassword, getOwnerPassword } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -164,6 +164,18 @@ export default function Home() {
   const heartMut = useMutation({
     mutationFn: (id: number) => apiRequest<{ hearts: number }>("POST", `/api/messages/${id}/heart`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/messages"] }),
+  });
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => apiRequest<{ ok: boolean }>("DELETE", `/api/messages/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/messages"] });
+      show(t.deleted);
+      setSelected(null);
+      setConfirmDelete(false);
+    },
+    onError: () => show(t.deleteFailed, "err"),
   });
 
   // ─── Cell click ────────────────────────────────────────────────────────
@@ -365,7 +377,15 @@ export default function Home() {
       />
 
       {/* ── Detail dialog ──────────────────────────────────────────── */}
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+      <Dialog
+        open={!!selected}
+        onOpenChange={(o) => {
+          if (!o) {
+            setSelected(null);
+            setConfirmDelete(false);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -393,22 +413,58 @@ export default function Home() {
           )}
 
           {selected && (
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => {
-                  if (!selected || hearted.has(selected.id)) return;
-                  heartMut.mutate(selected.id);
-                  setHearted((s) => new Set(s).add(selected.id));
-                }}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-50"
-                disabled={hearted.has(selected.id)}
-              >
-                <HeartIcon size={14} filled={hearted.has(selected.id)} className="text-rose-500" />
-                {selected.hearts + (hearted.has(selected.id) ? 1 : 0)}
-              </button>
-              <Button variant="ghost" onClick={() => setSelected(null)}>
-                {t.cancel}
-              </Button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    if (!selected || hearted.has(selected.id)) return;
+                    heartMut.mutate(selected.id);
+                    setHearted((s) => new Set(s).add(selected.id));
+                  }}
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                  disabled={hearted.has(selected.id)}
+                >
+                  <HeartIcon size={14} filled={hearted.has(selected.id)} className="text-rose-500" />
+                  {selected.hearts + (hearted.has(selected.id) ? 1 : 0)}
+                </button>
+                <div className="flex items-center gap-2">
+                  {isOwner && !confirmDelete && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmDelete(true)}
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      data-testid="button-delete-letter"
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      {t.deleteBtn}
+                    </Button>
+                  )}
+                  <Button variant="ghost" onClick={() => setSelected(null)}>
+                    {t.cancel}
+                  </Button>
+                </div>
+              </div>
+              {isOwner && confirmDelete && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
+                  <p className="mb-2 text-sm text-foreground">{t.deleteConfirm}</p>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+                      {t.cancel}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => selected && deleteMut.mutate(selected.id)}
+                      disabled={deleteMut.isPending}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      data-testid="button-delete-confirm"
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      {t.deleteConfirmYes}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
