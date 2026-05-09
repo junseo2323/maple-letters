@@ -69,7 +69,7 @@ export const translations: Record<"ko" | "en", Dict> = {
   ko: {
     madeIn: "Made with ♥ in Canada",
     subtitle: "캐나다에서 함께한 시간을 편지로 남겨주세요",
-    progress: (filled: number, total: number) => `${filled} / ${total} 칸 · 주인만 읽을 수 있는 편지예요`,
+    progress: (filled: number, total: number) => `${filled} / ${total} 칸 · 비밀번호를 아는 사람만 읽을 수 있는 편지예요`,
     cta: "칸을 골라 내 편지를 남겨주세요",
     flagFull: "← 좌우로 스크롤해서 국기 전체를 보세요 →",
 
@@ -89,14 +89,14 @@ export const translations: Record<"ko" | "en", Dict> = {
 
     // Detail dialog
     detailTitle: "편지",
-    locked: "이 편지는 주인만 읽을 수 있어요",
-    unlockHint: "주인이라면 자물쇠 아이콘으로 잠금을 풀어주세요",
+    locked: "이 편지는 비밀번호를 아는 사람만 읽을 수 있어요",
+    unlockHint: "비밀번호를 알고 있다면 자물쇠 아이콘으로 잠금을 풀어주세요",
 
     // Settings
     settingsTitle: "편지지 설정",
     paperName: "편지지 이름",
     paperNamePh: "예: 민지의 캐나다 어학연수",
-    ownerPassword: "주인 비밀번호",
+    ownerPassword: "관리 비밀번호",
     currentPassword: "현재 비밀번호",
     newPassword: "새 비밀번호",
     firstSetup: "처음이라면 새 비밀번호만 입력하세요",
@@ -104,7 +104,7 @@ export const translations: Record<"ko" | "en", Dict> = {
     settingsFailed: "저장 실패. 비밀번호를 확인하세요",
 
     // Unlock
-    unlockTitle: "주인 인증",
+    unlockTitle: "비밀번호 확인",
     unlockDesc: "비밀번호를 입력하면 모든 편지 내용을 볼 수 있어요",
     unlock: "잠금 해제",
     locking: "잠금",
@@ -148,7 +148,7 @@ export const translations: Record<"ko" | "en", Dict> = {
   en: {
     madeIn: "Made with ♥ in Canada",
     subtitle: "Leave a letter from your Canada days",
-    progress: (filled: number, total: number) => `${filled} / ${total} tiles · Only the owner can read`,
+    progress: (filled: number, total: number) => `${filled} / ${total} tiles · Only people with the password can read`,
     cta: "Pick a tile and leave your letter",
     flagFull: "← Scroll to explore the whole flag →",
 
@@ -166,20 +166,20 @@ export const translations: Record<"ko" | "en", Dict> = {
     charCount: (n: number) => `${n} / 500`,
 
     detailTitle: "Letter",
-    locked: "Only the owner can read this letter",
-    unlockHint: "If you're the owner, click the lock icon to unlock",
+    locked: "Only people with the password can read this letter",
+    unlockHint: "If you know the password, click the lock icon to unlock",
 
     settingsTitle: "Paper settings",
     paperName: "Paper name",
     paperNamePh: "e.g., Min-ji's Canada Journey",
-    ownerPassword: "Owner password",
+    ownerPassword: "Admin password",
     currentPassword: "Current password",
     newPassword: "New password",
     firstSetup: "First time? Just set a new password",
     settingsSaved: "Saved",
     settingsFailed: "Save failed. Check your password",
 
-    unlockTitle: "Owner verification",
+    unlockTitle: "Password verification",
     unlockDesc: "Enter the password to read every letter",
     unlock: "Unlock",
     locking: "Locked",
