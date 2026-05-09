@@ -212,8 +212,8 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
           <div className="flex items-center gap-2">
             <MapleLeaf size={20} color="#D52B1E" />
             <span className="font-semibold text-foreground">{settings?.paperName ?? "Maple Letters"}</span>
