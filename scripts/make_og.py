@@ -110,23 +110,6 @@ def main() -> None:
     )
     draw.text((pad_x, sub_y), sub_text, font=kr_font, fill=(235, 235, 235))
 
-    # Top-right badge: maple-letters.vercel.app
-    url_text = "maple-letters.vercel.app"
-    url_font = find_font(reg_candidates, 22)
-    bbox = draw.textbbox((0, 0), url_text, font=url_font)
-    tw = bbox[2] - bbox[0]
-    th = bbox[3] - bbox[1]
-    bx, by = W - pad_x - tw - 32, 36
-    # Pill
-    draw.rounded_rectangle(
-        [bx, by, bx + tw + 32, by + th + 22],
-        radius=24,
-        fill=(0, 0, 0, 140),
-        outline=(255, 255, 255, 80),
-        width=1,
-    )
-    draw.text((bx + 16, by + 9), url_text, font=url_font, fill=(255, 255, 255))
-
     out = composite.convert("RGB")
     out.save(OUT, "JPEG", quality=88, optimize=True, progressive=True)
     print(f"wrote {OUT} ({OUT.stat().st_size} bytes)")
