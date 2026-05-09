@@ -823,7 +823,7 @@ function SettingsDialog({
               </Button>
               <Button variant="primary" onClick={save} disabled={busy}>
                 <Check className="mr-1.5 h-3.5 w-3.5" />
-                {t.save}
+                {t.saveSettings}
               </Button>
             </DialogFooter>
           </>

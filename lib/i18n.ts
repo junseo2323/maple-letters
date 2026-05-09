@@ -15,6 +15,7 @@ type Dict = {
   color: string;
   sticker: string;
   save: string;
+  saveSettings: string;
   cancel: string;
   charCount: (n: number) => string;
   detailTitle: string;
@@ -75,7 +76,8 @@ export const translations: Record<"ko" | "en", Dict> = {
     messagePh: "캐나다에서 함께한 추억, 응원, 한마디...",
     color: "카드 색상",
     sticker: "스티커",
-    save: "이 칸 차지하기",
+    save: "편지 남기기",
+    saveSettings: "저장",
     cancel: "취소",
     charCount: (n: number) => `${n} / 500자`,
 
@@ -145,7 +147,8 @@ export const translations: Record<"ko" | "en", Dict> = {
     messagePh: "Memories from Canada, encouragement, anything...",
     color: "Card color",
     sticker: "Sticker",
-    save: "Claim this tile",
+    save: "Leave letter",
+    saveSettings: "Save",
     cancel: "Cancel",
     charCount: (n: number) => `${n} / 500`,
 
