@@ -337,21 +337,15 @@ export default function Home() {
           <p className="mt-3 text-center text-xs text-muted-foreground sm:hidden">{t.flagFull}</p>
         </div>
 
-        {/* CTA */}
+        {/* CTA — informational only, not clickable */}
         <div className="mt-6 flex justify-center">
-          <Button
-            size="lg"
-            onClick={() => {
-              const empty = Array.from({ length: TOTAL_CELLS }).findIndex((_, i) => !cellMap.has(i));
-              if (empty >= 0) {
-                setPickedCell(empty);
-                setOpenWrite(true);
-              }
-            }}
-            disabled={isLoading || filledCount >= TOTAL_CELLS}
+          <p
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-2 text-sm text-muted-foreground"
+            data-testid="text-cta"
           >
-            <Pencil className="mr-2 h-4 w-4" /> {txt.cta}
-          </Button>
+            <Pencil className="h-3.5 w-3.5" />
+            {txt.cta}
+          </p>
         </div>
       </section>
 
